@@ -53,7 +53,6 @@ except NameError:
     # Ugh.
     long = int
 
-
 __author__ = 'Daniel Lindsley, Joseph Kocherhans, Jacob Kaplan-Moss'
 __all__ = ['Solr']
 
@@ -65,11 +64,13 @@ except DistributionNotFound:
     __version__ = '0.0.dev0'
     version_info = parse_version(__version__)
 
+
 def get_version():
     return __version__
 
 
-DATETIME_REGEX = re.compile('^(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})T(?P<hour>\d{2}):(?P<minute>\d{2}):(?P<second>\d{2})(\.\d+)?Z$')
+DATETIME_REGEX = re.compile(
+    '^(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})T(?P<hour>\d{2}):(?P<minute>\d{2}):(?P<second>\d{2})(\.\d+)?Z$')
 # dict key used to add nested documents to a document
 NESTED_DOC_KEY = '_childDocuments_'
 
@@ -146,6 +147,7 @@ def unescape_html(text):
 
     Source: http://effbot.org/zone/re-sub.htm#unescape-html
     """
+
     def fixup(m):
         text = m.group(0)
         if text[:2] == "&#":
@@ -164,6 +166,7 @@ def unescape_html(text):
             except KeyError:
                 pass
         return text  # leave as is
+
     return re.sub("&#?\w+;", fixup, text)
 
 
@@ -203,11 +206,11 @@ def is_valid_xml_char_ordinal(i):
     """
     # conditions ordered by presumed frequency
     return (
-        0x20 <= i <= 0xD7FF
-        or i in (0x9, 0xA, 0xD)
-        or 0xE000 <= i <= 0xFFFD
-        or 0x10000 <= i <= 0x10FFFF
-        )
+            0x20 <= i <= 0xD7FF
+            or i in (0x9, 0xA, 0xD)
+            or 0xE000 <= i <= 0xFFFD
+            or 0x10000 <= i <= 0x10FFFF
+    )
 
 
 def clean_xml_string(s):
@@ -311,6 +314,7 @@ class Solr(object):
         solr = pysolr.Solr('http://localhost:8983/solr', results_cls=dict)
 
     """
+
     def __init__(self, url, decoder=None, timeout=60, results_cls=Results, search_handler='select', use_qt_param=False,
                  auth=None, verify=True):
         self.decoder = decoder or json.JSONDecoder()
@@ -665,7 +669,8 @@ class Solr(object):
                 for dk, dv in date_values.items():
                     date_values[dk] = int(dv)
 
-                return datetime.datetime(date_values['year'], date_values['month'], date_values['day'], date_values['hour'], date_values['minute'], date_values['second'])
+                return datetime.datetime(date_values['year'], date_values['month'], date_values['day'],
+                                         date_values['hour'], date_values['minute'], date_values['second'])
 
         try:
             # This is slightly gross but it's hard to tell otherwise what the
@@ -821,7 +826,7 @@ class Solr(object):
             if isinstance(value, (list, tuple, set)):
                 values = value
             else:
-                values = (value, )
+                values = (value,)
 
             for bit in values:
                 if self._is_null_value(bit):
@@ -905,7 +910,8 @@ class Solr(object):
         return self._update(m, commit=commit, softCommit=softCommit, waitFlush=waitFlush, waitSearcher=waitSearcher,
                             overwrite=overwrite, handler=handler)
 
-    def delete(self, id=None, q=None, commit=True, softCommit=False, waitFlush=None, waitSearcher=None, handler='update'):
+    def delete(self, id=None, q=None, commit=True, softCommit=False, waitFlush=None, waitSearcher=None,
+               handler='update'):
         """
         Deletes documents.
 
@@ -945,7 +951,8 @@ class Solr(object):
         elif q is not None:
             m = '<delete><query>%s</query></delete>' % q
 
-        return self._update(m, commit=commit, softCommit=softCommit, waitFlush=waitFlush, waitSearcher=waitSearcher, handler=handler)
+        return self._update(m, commit=commit, softCommit=softCommit, waitFlush=waitFlush, waitSearcher=waitSearcher,
+                            handler=handler)
 
     def commit(self, softCommit=False, waitFlush=None, waitSearcher=None, expungeDeletes=None, handler='update'):
         """
@@ -969,7 +976,8 @@ class Solr(object):
         else:
             msg = '<commit />'
 
-        return self._update(msg, commit=not softCommit, softCommit=softCommit, waitFlush=waitFlush, waitSearcher=waitSearcher, handler=handler)
+        return self._update(msg, commit=not softCommit, softCommit=softCommit, waitFlush=waitFlush,
+                            waitSearcher=waitSearcher, handler=handler)
 
     def optimize(self, commit=True, waitFlush=None, waitSearcher=None, maxSegments=None, handler='update'):
         """
@@ -1079,6 +1087,7 @@ class SolrCoreAdmin(object):
        7. UNLOAD
        8. LOAD (not currently implemented)
     """
+
     def __init__(self, url, *args, **kwargs):
         super(SolrCoreAdmin, self).__init__(*args, **kwargs)
         self.url = url
@@ -1204,7 +1213,7 @@ class SolrCloud(Solr):
         self.auth = auth
         self.verify = verify
 
-        super(SolrCloud, self).__init__(url, decoder=decoder, timeout=timeout, auth=self.auth, verify = self.verify,
+        super(SolrCloud, self).__init__(url, decoder=decoder, timeout=timeout, auth=self.auth, verify=self.verify,
                                         *args, **kwargs)
 
         self.zookeeper = zookeeper
@@ -1239,6 +1248,8 @@ class ZooKeeper(object):
     # Constants used by the REST API:
     LIVE_NODES_ZKNODE = '/live_nodes'
     ALIASES = '/aliases.json'
+    COLLECTION_STATUS = '/collections'
+    CLUSTER_DETAILED_STATE = '/collections/%s/state.json'
     CLUSTER_STATE = '/clusterstate.json'
     SHARDS = 'shards'
     REPLICAS = 'replicas'
@@ -1274,7 +1285,21 @@ class ZooKeeper(object):
                 self.state = state
             elif state == KazooState.SUSPENDED:
                 self.state = state
+
         self.zk.add_listener(connectionListener)
+
+        def watchClusterDetailedState(data, *args, **kwargs):
+            if not data:
+                LOG.warning("No cluster state available: no collections defined?")
+            else:
+                self.collections.update(json.loads(data.decode('utf-8')))
+                LOG.info('Updated collections: %s', self.collections)
+
+        @self.zk.ChildrenWatch(ZooKeeper.COLLECTION_STATUS)
+        def watchClusterState(children):
+            LOG.info("Updated collection: %s", children)
+            for child in children:
+                self.zk.DataWatch(self.CLUSTER_DETAILED_STATE % child, watchClusterDetailedState)
 
         @self.zk.DataWatch(ZooKeeper.CLUSTER_STATE)
         def watchClusterState(data, *args, **kwargs):
